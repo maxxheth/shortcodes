@@ -117,6 +117,42 @@ describe("ShortcodeParser", function () {
       result.should.eql("Some B should work.");
     });
 
+    it("should parse camelCase name", async function () {
+      var parser = ShortcodeParser();
+
+      parser.add("testThis", async function (opts, content) {
+        return opts.a;
+      });
+
+      const result = await parser.parse("Some [testThis a=B/] should work.");
+
+      result.should.eql("Some B should work.");
+    });
+
+    it("should parse CapitalCase name", async function () {
+      var parser = ShortcodeParser();
+
+      parser.add("TestThis", async function (opts, content) {
+        return opts.a;
+      });
+
+      const result = await parser.parse("Some [TestThis a=B/] should work.");
+
+      result.should.eql("Some B should work.");
+    });
+
+    it("should parse snake_case name", async function () {
+      var parser = ShortcodeParser();
+
+      parser.add("test_this", async function (opts, content) {
+        return opts.a;
+      });
+
+      const result = await parser.parse("Some [test_this a=B/] should work.");
+
+      result.should.eql("Some B should work.");
+    });
+
     it("should parse multiple attributes", async function () {
       var parser = ShortcodeParser();
 
