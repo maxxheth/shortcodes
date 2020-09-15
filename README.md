@@ -1,4 +1,6 @@
-# meta-shortcodes
+# Elder.js Shortcode Parser
+
+> This is a fork of [meta-shortcodes](https://github.com/metaplatform/meta-shortcodes) which adds async support and has updated the tests to support async.
 
 Generic shortcodes parser with support of attributes and single/pair tags.
 

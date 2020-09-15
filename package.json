@@ -1,7 +1,7 @@
 {
-  "name": "meta-shortcodes",
-  "version": "1.0.3",
-  "description": "Shortcode parser with support of arguments, key-value attributes and nesting.",
+  "name": "@elderjs/shortcodes",
+  "version": "1.0.4",
+  "description": "An Shortcode parser with support of arguments, key-value attributes, nesting, and async.",
   "main": "lib/parser.js",
   "directories": {
     "test": "test"
@@ -10,11 +10,13 @@
     "lint": "./node_modules/.bin/jshint --exclude-path ./.gitignore --reporter=./node_modules/jshint-full-path/index.js .",
     "pretest": "npm run-script lint",
     "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --require should --reporter spec --ui bdd ./test/*",
-    "posttest": "./node_modules/.bin/istanbul check-coverage"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/metaplatform/meta-shortcodes.git"
+    "url": "https://github.com/Elderjs/shortcodes.git"
+  },
+  "jshintConfig": {
+    "esversion": 8
   },
   "keywords": [
     "shortcode",
@@ -24,12 +26,12 @@
     "parser",
     "shortcode-parser"
   ],
-  "author": "META Platform team <www.meta-platform.com>",
+  "author": "META Platform team <www.meta-platform.com> & Elder.js",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/metaplatform/meta-shortcodes/issues"
+    "url": "https://github.com/Elderjs/shortcodes/issues"
   },
-  "homepage": "https://github.com/metaplatform/meta-shortcodes",
+  "homepage": "https://github.com/Elderjs/shortcodes",
   "devDependencies": {
     "istanbul": "^0.3.17",
     "jshint": "^2.8.0",

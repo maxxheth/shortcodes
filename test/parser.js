@@ -10,296 +10,299 @@ var should = require("should");
 
 var ShortcodeParser = require(__dirname + "/../lib/parser.js");
 
-describe("ShortcodeParser", function(){
+describe("ShortcodeParser", function () {
+  describe("#constructor", function () {
+    it("should construct with default options", function () {
+      var parser = ShortcodeParser();
 
-	describe("#constructor", function(){
+      parser.options.should.eql({
+        openPattern: "\\[",
+        closePattern: "\\]",
+      });
+    });
 
-		it("should construct with default options", function(){
+    it("should construct with specified options", function () {
+      var parser = ShortcodeParser({
+        openPattern: "\\{\\{",
+        closePattern: "\\}\\}",
+      });
 
-			var parser = ShortcodeParser();
+      parser.options.should.eql({
+        openPattern: "\\{\\{",
+        closePattern: "\\}\\}",
+      });
+    });
+  });
 
-			parser.options.should.eql({
-				openPattern: '\\[',
-				closePattern: '\\]'
-			});
+  describe("#add", function () {
+    var parser = ShortcodeParser();
 
-		});
+    it("should register shortcode", function () {
+      var handler = function () {
+        return;
+      };
 
-		it("should construct with specified options", function(){
+      parser.add("test", handler);
 
-			var parser = ShortcodeParser({
-				openPattern: '\\{\\{',
-				closePattern: '\\}\\}'
-			});
+      parser.shortcodes.test.should.eql(handler);
+    });
+  });
 
-			parser.options.should.eql({
-				openPattern: '\\{\\{',
-				closePattern: '\\}\\}'
-			});
+  describe("#parse", function () {
+    it("should parse non-shortcode string as it is", async function () {
+      var parser = ShortcodeParser();
 
-		});
+      const result = await parser.parse("Some test should work.");
 
-	});
+      result.should.eql("Some test should work.");
+    });
 
-	describe("#add", function(){
+    it("should parse basic self-closing shortcode", async function () {
+      var parser = ShortcodeParser();
 
-		var parser = ShortcodeParser();
+      parser.add("test", async function (opts, content) {
+        return "OK";
+      });
 
-		it("should register shortcode", function(){
+      const result = await parser.parse("Some [test/] should work.");
 
-			var handler = function(){
-				return;
-			};
+      result.should.eql("Some OK should work.");
+    });
 
-			parser.add("test", handler);
+    it("should parse basic pair shortcode", async function () {
+      var parser = ShortcodeParser();
 
-			parser.shortcodes.test.should.eql(handler);
+      parser.add("test", async function (opts, content) {
+        return content.toUpperCase();
+      });
 
-		});
+      const result = await parser.parse("Some [test]ok[/test] should work.");
 
-	});
+      result.should.eql("Some OK should work.");
+    });
 
-	describe("#parse", function(){
+    it("should parse single argument", async function () {
+      var parser = ShortcodeParser();
 
-		it("should parse non-shortcode string as it is", function(){
+      parser.add("test", async function (opts, content) {
+        return opts[0];
+      });
 
-			var parser = ShortcodeParser();
+      const result = await parser.parse("Some [test OK/] should work.");
 
-			parser.parse("Some test should work.").should.eql("Some test should work.");
+      result.should.eql("Some OK should work.");
+    });
 
-		});
+    it("should parse multiple arguments", async function () {
+      var parser = ShortcodeParser();
 
-		it("should parse basic self-closing shortcode", function(){
+      parser.add("test", async function (opts, content) {
+        return opts.join("+");
+      });
 
-			var parser = ShortcodeParser();
+      const result = await parser.parse("Some [test A B/] should work.");
 
-			parser.add("test", function(opts, content){
-				return "OK";
-			});
+      result.should.eql("Some A+B should work.");
+    });
 
-			parser.parse("Some [test/] should work.").should.eql("Some OK should work.");
+    it("should parse single attribute", async function () {
+      var parser = ShortcodeParser();
 
-		});
+      parser.add("test", async function (opts, content) {
+        return opts.a;
+      });
 
-		it("should parse basic pair shortcode", function(){
+      const result = await parser.parse("Some [test a=B/] should work.");
 
-			var parser = ShortcodeParser();
+      result.should.eql("Some B should work.");
+    });
 
-			parser.add("test", function(opts, content){
-				return content.toUpperCase();
-			});
+    it("should parse multiple attributes", async function () {
+      var parser = ShortcodeParser();
 
-			parser.parse("Some [test]ok[/test] should work.").should.eql("Some OK should work.");
+      parser.add("test", async function (opts, content) {
+        return opts.a + "+" + opts.c;
+      });
 
-		});
+      const result = await parser.parse("Some [test a=B c=D/] should work.");
 
-		it("should parse single argument", function(){
+      result.should.eql("Some B+D should work.");
+    });
 
-			var parser = ShortcodeParser();
+    it("should parse both arguments and attributes mixed", async function () {
+      var parser = ShortcodeParser();
 
-			parser.add("test", function(opts, content){
-				return opts[0];
-			});
+      parser.add("test", async function (opts, content) {
+        return opts.join("+") + "+" + opts.a + "+" + opts.x;
+      });
 
-			parser.parse("Some [test OK/] should work.").should.eql("Some OK should work.");
+      const result = await parser.parse(
+        "Some [test 1 2 3 a=B x=Y/] should work."
+      );
 
-		});
+      result.should.eql("Some 1+2+3+B+Y should work.");
+    });
 
-		it("should parse multiple arguments", function(){
+    it("should parse arguments in quotes with respect to escaping", async function () {
+      var parser = ShortcodeParser();
 
-			var parser = ShortcodeParser();
+      parser.add("test", async function (opts, content) {
+        return opts.join("+") + "+" + opts["long=key"];
+      });
 
-			parser.add("test", function(opts, content){
-				return opts.join("+");
-			});
+      const result = await parser.parse(
+        "Some [test \"long attribute\" 'another escaped attribute' 'long=key'='evil\"value'/] should work."
+      );
 
-			parser.parse("Some [test A B/] should work.").should.eql("Some A+B should work.");
+      result.should.eql(
+        'Some long attribute+another escaped attribute+evil"value should work.'
+      );
+    });
 
-		});
+    it("should parse multiple shortcodes", async function () {
+      var parser = ShortcodeParser();
 
-		it("should parse single attribute", function(){
+      parser.add("test1", async function (opts, content) {
+        return "A";
+      });
 
-			var parser = ShortcodeParser();
+      parser.add("test2", async function (opts, content) {
+        return "B";
+      });
 
-			parser.add("test", function(opts, content){
-				return opts.a;
-			});
+      const result = await parser.parse(
+        "Some [test1/] and [test2/] should work."
+      );
 
-			parser.parse("Some [test a=B/] should work.").should.eql("Some B should work.");
+      result.should.eql("Some A and B should work.");
+    });
 
-		});
+    it("should parse nested shortcodes", async function () {
+      var parser = ShortcodeParser();
 
-		it("should parse multiple attributes", function(){
+      parser.add("test1", async function (opts, content) {
+        return content.toUpperCase();
+      });
 
-			var parser = ShortcodeParser();
+      parser.add("test2", async function (opts, content) {
+        return "b";
+      });
 
-			parser.add("test", function(opts, content){
-				return opts.a + "+" + opts.c;
-			});
+      const result = await parser.parse(
+        "Some [test1]nested [test2/] should[/test1] work."
+      );
 
-			parser.parse("Some [test a=B c=D/] should work.").should.eql("Some B+D should work.");
+      result.should.eql("Some NESTED B SHOULD work.");
+    });
 
-		});
+    it("should parse multiple nested shortcodes", async function () {
+      var parser = ShortcodeParser();
 
-		it("should parse both arguments and attributes mixed", function(){
+      parser.add("test1", async function (opts, content) {
+        return content.toUpperCase();
+      });
 
-			var parser = ShortcodeParser();
+      parser.add("test2", async function (opts, content) {
+        return "b";
+      });
 
-			parser.add("test", function(opts, content){
-				return opts.join("+") + "+" + opts.a + "+" + opts.x;
-			});
+      const result = await parser.parse(
+        "Some [test1]nested [test1][test2/][/test1] [test2/] should[/test1] work."
+      );
 
-			parser.parse("Some [test 1 2 3 a=B x=Y/] should work.").should.eql("Some 1+2+3+B+Y should work.");
+      result.should.eql("Some NESTED B B SHOULD work.");
+    });
 
-		});
+    it("should mark unknown shortcode", async function () {
+      var parser = ShortcodeParser();
 
-		it("should parse arguments in quotes with respect to escaping", function(){
+      const result = await parser.parse(
+        "Some [test1]pair with [test3/] nested[/test1] and [test2/] shortcode. [another sc"
+      );
 
-			var parser = ShortcodeParser();
+      result.should.eql(
+        "Some [!test1!]pair with [!test3!/] nested[/!test1!] and [!test2!/] shortcode. [!another!/]"
+      );
+    });
 
-			parser.add("test", function(opts, content){
-				return opts.join("+") + "+" + opts["long=key"];
-			});
+    it("should mark error if no tag name", async function () {
+      var parser = ShortcodeParser();
 
-			parser.parse("Some [test \"long attribute\" 'another escaped attribute' 'long=key'='evil\"value'/] should work.").should.eql("Some long attribute+another escaped attribute+evil\"value should work.");
+      const result = await parser.parse("Some [.");
 
-		});
+      result.should.eql("Some [^!].");
+    });
 
-		it("should parse multiple shortcodes", function(){
+    it("should mark error if unclosed tag body", async function () {
+      var parser = ShortcodeParser();
 
-			var parser = ShortcodeParser();
+      const result = await parser.parse("Some [test with unclosed attributes");
+      result.should.eql("Some [!test!/]");
+    });
 
-			parser.add("test1", function(opts, content){
-				return "A";
-			});
+    it("should mark error if unclosed pair tag", async function () {
+      var parser = ShortcodeParser();
+      const result = await parser.parse("Some [test]with content");
+      result.should.eql("Some [!test!]with content");
+    });
 
-			parser.add("test2", function(opts, content){
-				return "B";
-			});
+    it("should mark error if broken closing tag", async function () {
+      var parser = ShortcodeParser();
 
-			parser.parse("Some [test1/] and [test2/] should work.").should.eql("Some A and B should work.");
+      const result = await parser.parse("Some [test]with content[/test");
+      result.should.eql("Some [!test!]with content[/test");
+    });
 
-		});
+    it("should mark error if different closing tag", async function () {
+      var parser = ShortcodeParser();
+      const result = await parser.parse("Some [test]with content[/test2]");
+      result.should.eql("Some [!test!]with content[/test2]");
+    });
 
-		it("should parse nested shortcodes", function(){
+    it("should parse shortcode with alternative brackets", async function () {
+      var parser = ShortcodeParser({
+        openPattern: "\\{{",
+        closePattern: "\\}}",
+      });
 
-			var parser = ShortcodeParser();
+      parser.add("test", async function (opts, content) {
+        return "OK";
+      });
 
-			parser.add("test1", function(opts, content){
-				return content.toUpperCase();
-			});
+      const result = await parser.parse("Some {{test/}} should work.");
+      result.should.eql("Some OK should work.");
+    });
 
-			parser.add("test2", function(opts, content){
-				return "b";
-			});
+    it("should ignore shortcode with escaped opening pattern", async function () {
+      var parser = ShortcodeParser();
 
-			parser.parse("Some [test1]nested [test2/] should[/test1] work.").should.eql("Some NESTED B SHOULD work.");
+      parser.add("test", async function (opts, content) {
+        return "OK";
+      });
 
-		});
+      const result = await parser.parse(
+        "Some \\[test/] \\[test] [test /] \\[test] \\[test /] [/test] should be ignored."
+      );
 
-		it("should parse multiple nested shortcodes", function(){
+      result.should.eql(
+        "Some [test/] [test] OK [test] [test /] [/test] should be ignored."
+      );
+    });
 
-			var parser = ShortcodeParser();
+    it("should ignore shortcode with escaped opening pattern nested in regular shortcode", async function () {
+      var parser = ShortcodeParser();
 
-			parser.add("test1", function(opts, content){
-				return content.toUpperCase();
-			});
+      parser.add("test", async function (opts, content) {
+        return content.toUpperCase();
+      });
 
-			parser.add("test2", function(opts, content){
-				return "b";
-			});
+      const result = await parser.parse(
+        "Some [test]nested \\[shortcode] or \\[shortcode /] or \\[shortcode]...[/shortcode][/test] should be ignored."
+      );
 
-			parser.parse("Some [test1]nested [test1][test2/][/test1] [test2/] should[/test1] work.").should.eql("Some NESTED B B SHOULD work.");
-
-		});
-
-		it("should mark unknown shortcode", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.parse("Some [test1]pair with [test3/] nested[/test1] and [test2/] shortcode. [another sc").should.eql("Some [!test1!]pair with [!test3!/] nested[/!test1!] and [!test2!/] shortcode. [!another!/]");
-
-		});
-
-		it("should mark error if no tag name", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.parse("Some [.").should.eql("Some [^!].");
-
-		});
-
-		it("should mark error if unclosed tag body", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.parse("Some [test with unclosed attributes").should.eql("Some [!test!/]");
-
-		});
-
-		it("should mark error if unclosed pair tag", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.parse("Some [test]with content").should.eql("Some [!test!]with content");
-
-		});
-
-		it("should mark error if broken closing tag", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.parse("Some [test]with content[/test").should.eql("Some [!test!]with content[/test");
-
-		});
-
-		it("should mark error if different closing tag", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.parse("Some [test]with content[/test2]").should.eql("Some [!test!]with content[/test2]");
-
-		});
-
-		it("should parse shortcode with alternative brackets", function(){
-
-			var parser = ShortcodeParser({
-				openPattern: '\\{{',
-				closePattern: '\\}}'
-			});
-
-			parser.add("test", function(opts, content){
-				return "OK";
-			});
-
-			parser.parse("Some {{test/}} should work.").should.eql("Some OK should work.");
-
-		});
-
-		it("should ignore shortcode with escaped opening pattern", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.add("test", function(opts, content){
-				return "OK";
-			});
-
-			parser.parse("Some \\[test/] \\[test] [test /] \\[test] \\[test /] [/test] should be ignored.").should.eql("Some [test/] [test] OK [test] [test /] [/test] should be ignored.");
-
-		});
-
-		it("should ignore shortcode with escaped opening pattern nested in regular shortcode", function(){
-
-			var parser = ShortcodeParser();
-
-			parser.add("test", function(opts, content){
-				return content.toUpperCase();
-			});
-
-			parser.parse("Some [test]nested \\[shortcode] or \\[shortcode /] or \\[shortcode]...[/shortcode][/test] should be ignored.").should.eql("Some NESTED [SHORTCODE] OR [SHORTCODE /] OR [SHORTCODE]...[/SHORTCODE] should be ignored.");
-
-		});
-
-	});
-
+      result.should.eql(
+        "Some NESTED [SHORTCODE] OR [SHORTCODE /] OR [SHORTCODE]...[/SHORTCODE] should be ignored."
+      );
+    });
+  });
 });
