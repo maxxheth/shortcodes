@@ -12,11 +12,11 @@ var ShortcodeParser = require("meta-shortcodes");
 
 var parser = ShortcodeParser();
 
-parser.add("test", function(opts, content){
+parser.add("test", async function(opts, content){
 	return content.toUpperCase();
 });
 
-parser.add("nested", function(opts, content){
+parser.add("nested", async function(opts, content){
 
 	if(!opts.multiply) return "Missing multiply attribute!";
 
@@ -59,7 +59,7 @@ Registers new shortcode
 | Param           | Type     | Description                                                                                                     |
 | --------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
 | shortcodeName   | string   | Name of shortcode tag                                                                                           |
-| handlerFunction | function | Function that returns replacement for shortcode. Accepts two arguments - `options` object and `content` string. |
+| handlerFunction | function | Function/async function that returns replacement for shortcode. Accepts two arguments - `options` object and `content` string. |
 
 ### #parse(inputStr)
 
