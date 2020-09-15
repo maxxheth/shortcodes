@@ -12,25 +12,24 @@ var ShortcodeParser = require("meta-shortcodes");
 
 var parser = ShortcodeParser();
 
-parser.add("test", async function(opts, content){
-	return content.toUpperCase();
+parser.add("test", async function (opts, content) {
+  return content.toUpperCase();
 });
 
-parser.add("nested", async function(opts, content){
+parser.add("nested", async function (opts, content) {
+  if (!opts.multiply) return "Missing multiply attribute!";
 
-	if(!opts.multiply) return "Missing multiply attribute!";
+  var out = [];
 
-	var out = [];
+  for (var i = 0; i < opts.length; i++)
+    out.push(opts[i] * parseFloat(opts.multiply));
 
-	for(var i = 0; i < opts.length; i++)
-		out.push(opts[i] * parseFloat(opts.multiply));
-
-	return out.join(" ");
-
+  return out.join(" ");
 });
 
-var input = "Sample [test]shortcode content [nested multiply=2 2 4/] is upper[/test] case!";
-var output = parser.parse(input);
+var input =
+  "Sample [test]shortcode content [nested multiply=2 2 4/] is upper[/test] case!";
+var output = await parser.parse(input);
 
 output.should.eql("Sample SHORTCODE CONTENT 4 8 IS UPPER case!");
 ```
@@ -47,18 +46,18 @@ npm install meta-shortcodes
 
 ```javascript
 opts = {
-	openPattern: '\\[',
-	closePattern: '\\]'
-}
+  openPattern: "\\[",
+  closePattern: "\\]",
+};
 ```
 
 ### #add(shortcodeName, handlerFunction)
 
 Registers new shortcode
 
-| Param           | Type     | Description                                                                                                     |
-| --------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| shortcodeName   | string   | Name of shortcode tag                                                                                           |
+| Param           | Type     | Description                                                                                                                    |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| shortcodeName   | string   | Name of shortcode tag                                                                                                          |
 | handlerFunction | function | Function/async function that returns replacement for shortcode. Accepts two arguments - `options` object and `content` string. |
 
 ### #parse(inputStr)
@@ -104,15 +103,17 @@ var should = require("should");
 var ShortcodeParser = require("meta-shortcodes");
 
 var parser = ShortcodeParser({
-	openPattern: '\\{{',
-	closePattern: '\\}}'
+  openPattern: "\\{{",
+  closePattern: "\\}}",
 });
 
-parser.add("test", function(opts, content){
-	return content.toUpperCase();
+parser.add("test", function (opts, content) {
+  return content.toUpperCase();
 });
 
-var output = parser.parse("Sample {{test}}upper{{/test}} case!").should.eql("Sample UPPER case!");
+var output = parser
+  .parse("Sample {{test}}upper{{/test}} case!")
+  .should.eql("Sample UPPER case!");
 ```
 
 ## License
