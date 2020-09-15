@@ -117,4 +117,4 @@ var output = parser.parse("Sample {{test}}upper{{/test}} case!").should.eql("Sam
 
 ## License
 
-MIT (c) 2015 [META Platform team](http://www.meta-platform.com), [Jiri Hybek](http://jiri.hybek.cz/)
+MIT (c) 2020 [Elder Guide LLC](https://elderguide.com/)
