@@ -118,4 +118,4 @@ var output = parser
 
 ## License
 
-MIT (c) 2020 [Elder Guide LLC](https://elderguide.com/)
+See License file.
