@@ -179,6 +179,20 @@ describe("ShortcodeParser", function () {
       result.should.eql("Some 1+2+3+B+Y should work.");
     });
 
+    it("should parse &quot; as quote.", async function () {
+      var parser = ShortcodeParser();
+
+      parser.add("test", async function (opts, content) {
+        return opts.apple;
+      });
+
+      const result = await parser.parse(
+        "Some [test apple=&quot;yes&quot;/] should work."
+      );
+
+      result.should.eql("Some yes should work.");
+    });
+
     it("should parse arguments in quotes with respect to escaping", async function () {
       var parser = ShortcodeParser();
 
