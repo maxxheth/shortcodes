@@ -319,7 +319,44 @@ describe("ShortcodeParser", function () {
         return "OK";
       });
 
-      const result = await parser.parse("Some {{test/}} should work.");
+      let result = await parser.parse("Some {{test/}} should work.");
+      result.should.eql("Some OK should work.");
+
+      result = await parser.parse("Some {{test}}content{{/test}} should work.");
+      result.should.eql("Some OK should work.");
+    });
+
+    it("should parse shortcode with alternative brackets <{}>", async function () {
+      var parser = ShortcodeParser({
+        openPattern: "<{",
+        closePattern: "}>",
+      });
+
+      let props;
+      parser.add("test", async function (opts, content) {
+        props = content;
+        return "OK";
+      });
+
+      let result = await parser.parse("Some <{test/}> should work.");
+      result.should.eql("Some OK should work.");
+
+      result = await parser.parse("Some <{test}>content<{/test}> should work.");
+      result.should.eql("Some OK should work.");
+      props.should.eql("content");
+    });
+
+    it("should parse shortcode with alternative brackets {> <}", async function () {
+      var parser = ShortcodeParser({
+        openPattern: "{>",
+        closePattern: "<}",
+      });
+
+      parser.add("test", async function (opts, content) {
+        return "OK";
+      });
+
+      const result = await parser.parse("Some {>test/<} should work.");
       result.should.eql("Some OK should work.");
     });
 
