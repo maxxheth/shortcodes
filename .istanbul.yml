@@ -1,0 +1,2 @@
+instrumentation:
+    root: ./node_modules/.bin/istanbul
