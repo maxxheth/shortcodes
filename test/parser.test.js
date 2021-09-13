@@ -85,7 +85,7 @@ describe("ShortcodeParser", function () {
       var parser = ShortcodeParser();
 
       parser.add("test", async function (opts, content) {
-        return opts[0];
+        return opts.OK;
       });
 
       const result = await parser.parse("Some [test OK/] should work.");
@@ -97,7 +97,7 @@ describe("ShortcodeParser", function () {
       var parser = ShortcodeParser();
 
       parser.add("test", async function (opts, content) {
-        return opts.join("+");
+        return Object.keys(opts).join("+");
       });
 
       const result = await parser.parse("Some [test A B/] should work.");
@@ -153,6 +153,18 @@ describe("ShortcodeParser", function () {
       result.should.eql("Some B should work.");
     });
 
+    it("should return props as an object", async function () {
+      var parser = ShortcodeParser();
+
+      parser.add("test", async function (opts, content) {
+        return JSON.stringify(opts);
+      });
+
+      const result = await parser.parse(`[test a=foo b=bar/]`);
+
+      result.should.eql(JSON.stringify({ a: "foo", b: "bar" }));
+    });
+
     it("should parse multiple attributes", async function () {
       var parser = ShortcodeParser();
 
@@ -169,14 +181,12 @@ describe("ShortcodeParser", function () {
       var parser = ShortcodeParser();
 
       parser.add("test", async function (opts, content) {
-        return opts.join("+") + "+" + opts.a + "+" + opts.x;
+        return Object.entries(opts).reduce((out, cv) => out + cv[0] + cv[1], "");
       });
 
-      const result = await parser.parse(
-        "Some [test 1 2 3 a=B x=Y/] should work."
-      );
+      const result = await parser.parse("Some [test 1 2 3 a=B x=Y/] should work.");
 
-      result.should.eql("Some 1+2+3+B+Y should work.");
+      result.should.eql("Some 112233aBxY should work.");
     });
 
     it("should parse &quot; as quote.", async function () {
@@ -186,9 +196,7 @@ describe("ShortcodeParser", function () {
         return opts.apple;
       });
 
-      const result = await parser.parse(
-        "Some [test apple=&quot;yes&quot;/] should work."
-      );
+      const result = await parser.parse("Some [test apple=&quot;yes&quot;/] should work.");
 
       result.should.eql("Some yes should work.");
     });
@@ -197,7 +205,7 @@ describe("ShortcodeParser", function () {
       var parser = ShortcodeParser();
 
       parser.add("test", async function (opts, content) {
-        return opts.join("+") + "+" + opts["long=key"];
+        return JSON.stringify(opts);
       });
 
       const result = await parser.parse(
@@ -205,7 +213,7 @@ describe("ShortcodeParser", function () {
       );
 
       result.should.eql(
-        'Some long attribute+another escaped attribute+evil"value should work.'
+        'Some {"long attribute":"long attribute","another escaped attribute":"another escaped attribute","long=key":"evil\\"value"} should work.'
       );
     });
 
@@ -220,9 +228,7 @@ describe("ShortcodeParser", function () {
         return "B";
       });
 
-      const result = await parser.parse(
-        "Some [test1/] and [test2/] should work."
-      );
+      const result = await parser.parse("Some [test1/] and [test2/] should work.");
 
       result.should.eql("Some A and B should work.");
     });
@@ -238,9 +244,7 @@ describe("ShortcodeParser", function () {
         return "b";
       });
 
-      const result = await parser.parse(
-        "Some [test1]nested [test2/] should[/test1] work."
-      );
+      const result = await parser.parse("Some [test1]nested [test2/] should[/test1] work.");
 
       result.should.eql("Some NESTED B SHOULD work.");
     });
@@ -256,9 +260,7 @@ describe("ShortcodeParser", function () {
         return "b";
       });
 
-      const result = await parser.parse(
-        "Some [test1]nested [test1][test2/][/test1] [test2/] should[/test1] work."
-      );
+      const result = await parser.parse("Some [test1]nested [test1][test2/][/test1] [test2/] should[/test1] work.");
 
       result.should.eql("Some NESTED B B SHOULD work.");
     });
@@ -270,9 +272,7 @@ describe("ShortcodeParser", function () {
         "Some [test1]pair with [test3/] nested[/test1] and [test2/] shortcode. [another sc"
       );
 
-      result.should.eql(
-        "Some [!test1!]pair with [!test3!/] nested[/!test1!] and [!test2!/] shortcode. [!another!/]"
-      );
+      result.should.eql("Some [!test1!]pair with [!test3!/] nested[/!test1!] and [!test2!/] shortcode. [!another!/]");
     });
 
     it("should mark error if no tag name", async function () {
@@ -371,9 +371,7 @@ describe("ShortcodeParser", function () {
         "Some \\[test/] \\[test] [test /] \\[test] \\[test /] [/test] should be ignored."
       );
 
-      result.should.eql(
-        "Some [test/] [test] OK [test] [test /] [/test] should be ignored."
-      );
+      result.should.eql("Some [test/] [test] OK [test] [test /] [/test] should be ignored.");
     });
 
     it("should ignore shortcode with escaped opening pattern nested in regular shortcode", async function () {
@@ -387,9 +385,7 @@ describe("ShortcodeParser", function () {
         "Some [test]nested \\[shortcode] or \\[shortcode /] or \\[shortcode]...[/shortcode][/test] should be ignored."
       );
 
-      result.should.eql(
-        "Some NESTED [SHORTCODE] OR [SHORTCODE /] OR [SHORTCODE]...[/SHORTCODE] should be ignored."
-      );
+      result.should.eql("Some NESTED [SHORTCODE] OR [SHORTCODE /] OR [SHORTCODE]...[/SHORTCODE] should be ignored.");
     });
   });
 });
