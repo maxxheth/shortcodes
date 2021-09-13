@@ -1,6 +1,6 @@
 {
   "name": "@elderjs/shortcodes",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "An Shortcode parser with support of arguments, key-value attributes, nesting, and async.",
   "main": "lib/parser.js",
   "directories": {
